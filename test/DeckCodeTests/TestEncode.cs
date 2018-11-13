@@ -1,3 +1,4 @@
+using System.Text;
 using ArtifactSdkDotNet.Core;
 using ArtifactSdkDotNet.DeckCode;
 using Newtonsoft.Json;
@@ -20,7 +21,22 @@ namespace DeckCodeTests
             string encoded = DeckCodeEncoder.EncodeDeck(TestData.DeckWithTooLongName);
             Deck deck = DeckCodeDecoder.ParseDeck(encoded);
             
-            Assert.Equal(TestData.DeckWithTooLongName.Name.Substring(0, 63), deck.Name);
+            Assert.True(Encoding.UTF8.GetByteCount(TestData.DeckWithTooLongName.Name) > ArtifactSdkDotNet.Config.DeckCode.MaxDeckNameLengthBytes );
+            Assert.True(Encoding.UTF8.GetByteCount(deck.Name) <= ArtifactSdkDotNet.Config.DeckCode.MaxDeckNameLengthBytes );
+            //in this case it's a pure ascii string so one character = 1 byte
+            Assert.Equal(TestData.DeckWithTooLongName.Name.Substring(0, ArtifactSdkDotNet.Config.DeckCode.MaxDeckNameLengthBytes), deck.Name);
+        }
+        
+        [Fact]
+        public void SucceedTruncateNonAsciiName()
+        {
+            string encoded = DeckCodeEncoder.EncodeDeck(TestData.DeckWithNonAsciiName);
+            Deck deck = DeckCodeDecoder.ParseDeck(encoded);
+
+            Assert.True(Encoding.UTF8.GetByteCount(TestData.DeckWithNonAsciiName.Name) > ArtifactSdkDotNet.Config.DeckCode.MaxDeckNameLengthBytes );
+            Assert.True(Encoding.UTF8.GetByteCount(deck.Name) <= ArtifactSdkDotNet.Config.DeckCode.MaxDeckNameLengthBytes );
+            
+            Assert.NotEqual(deck.Name, TestData.DeckWithNonAsciiName.Name);
         }
 
         [Fact]

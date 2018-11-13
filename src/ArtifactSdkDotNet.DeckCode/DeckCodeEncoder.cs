@@ -38,13 +38,15 @@ namespace ArtifactSdkDotNet.DeckCode
                 {
                     //TODO: Make more sophisticated, maybe with HtmlPack
                     name = Regex.Replace(deck.Name, "<.*?>", String.Empty);
-                    if (name.Length > 63)
+                    
+                    //strip characters away until the byte count is 63 or less
+                    while (Encoding.UTF8.GetByteCount(name) > Config.DeckCode.MaxDeckNameLengthBytes)
                     {
-                        name = name.Substring(0, 63);
+                        name = name.Substring(0, name.Length - 1);
                     }
                 }
 
-                stream.WriteByte((byte) name.Length);
+                stream.WriteByte((byte) Encoding.UTF8.GetByteCount(name));
 
                 AddRemainingNumberToBuffer(countHeroes, 3, stream);
                 int prevCardId = 0;
