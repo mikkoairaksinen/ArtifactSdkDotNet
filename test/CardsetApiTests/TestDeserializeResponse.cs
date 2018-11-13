@@ -1,4 +1,9 @@
+using System;
+using System.Linq;
 using ArtifactSdkDotNet.CardsetApi;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using Utils;
 using Xunit;
 
@@ -9,15 +14,24 @@ namespace CardsetApiTests
         [Theory]
         [InlineData("00.json")]
         [InlineData("01.json")]
-        public void SucceedDeserializeCardSet( string file )
+        public void SucceedDeserializeCardSetWithoutDataLoss( string file )
         {
             var json = System.IO.File.ReadAllText($"../../../{file}");
-            var cardset = JsonUtils.DeserializeFromArtifactApi<CardsetApiJsonResponse>(json).Cardset; 
+            json = json.Replace("\n", "");
+            var resp = JsonUtils.DeserializeFromArtifactApi<CardsetApiJsonResponse>(json);
+
+            var json2 = JsonConvert.SerializeObject(resp, TestSettings);
             
-            Assert.NotNull(cardset);
-            Assert.NotNull(cardset.SetInfo);
-            Assert.NotEmpty(cardset.CardList);
+            Assert.Equal(json, json2);
         }
-        
+
+        private JsonSerializerSettings TestSettings = new JsonSerializerSettings()
+        {
+            ContractResolver = new JsonUtils.NonPublicPropertiesResolver()
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy(),
+            },
+            DefaultValueHandling = DefaultValueHandling.Ignore
+        };
     }
 }
